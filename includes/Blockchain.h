@@ -4,6 +4,8 @@
 #include "Block.h"
 #include "State.h"
 #include "Validation.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 typedef struct Blockchain
 {
@@ -11,5 +13,14 @@ typedef struct Blockchain
     long block_count;
     State *state;
 } Blockchain;
+
+Blockchain *create_blockchain();
+int validate_block_chain(Blockchain *chain, Block *block);
+int add_block(Blockchain *chain, Block *block);
+Block *get_last_block(Blockchain *chain);
+Block *get_block_by_id(Blockchain *chain, int id);
+int verify_blockchain_integrity(Blockchain *chain);
+void print_blockchain(Blockchain *chain);
+void free_blockchain(Blockchain *chain);
 
 #endif

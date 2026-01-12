@@ -1,100 +1,162 @@
 #include "../includes/Blockchain.h"
-#include <stdio.h>
 
-int main(void) {
-    printf("=== Testando Mini Blockchain ===\n\n");
+Blockchain *create_blockchain()
+{
+    Blockchain *chain = (Blockchain *)malloc(sizeof(Blockchain));
+    if (!chain)
+        return NULL;
     
-    // Teste 1: Criar bloco genesis
-    printf("1. Criando bloco genesis...\n");
+    chain->blocks = NULL;
+    chain->block_count = 0;
+    chain->state = NULL;
+    
     Block *genesis = create_block_genesis();
-    if (genesis)
+    if (!genesis)
     {
-        printf("   ✓ Bloco genesis criado com sucesso!\n");
-        printf("   ID: %d\n", genesis->id);
-        printf("   Hash anterior: %lu\n", genesis->previous_block_hash);
-        printf("   Hash do bloco: %lu\n", genesis->block_hash);
-        printf("   Transições: %d\n\n", genesis->transitions_count);
-    }
-    else
-    {
-        printf("   ✗ Falha ao criar bloco genesis\n\n");
-        return 1;
+        free(chain);
+        return NULL;
     }
     
-    // Teste 2: Criar transições para o próximo bloco
-    printf("2. Criando transições...\n");
-    Transition transitions[2];
-    transitions[0].from = 1;
-    transitions[0].to = 2;
-    transitions[0].amount = 100;
-    
-    transitions[1].from = 2;
-    transitions[1].to = 3;
-    transitions[1].amount = 50;
-    
-    printf("   ✓ Transição 1: %d -> %d (valor: %d)\n", 
-           transitions[0].from, transitions[0].to, transitions[0].amount);
-    printf("   ✓ Transição 2: %d -> %d (valor: %d)\n\n", 
-           transitions[1].from, transitions[1].to, transitions[1].amount);
-    
-    // Teste 3: Criar segundo bloco
-    printf("3. Criando segundo bloco...\n");
-    Block *block1 = create_block(1, genesis->block_hash, transitions, 2);
-    if (block1)
+    chain->blocks = (Block **)malloc(sizeof(Block *));
+    if (!chain->blocks)
     {
-        printf("   ✓ Bloco 1 criado com sucesso!\n");
-        printf("   ID: %d\n", block1->id);
-        printf("   Hash anterior: %lu\n", block1->previous_block_hash);
-        printf("   Hash do bloco: %lu\n", block1->block_hash);
-        printf("   Transições: %d\n\n", block1->transitions_count);
-    }
-    else
-    {
-        printf("   ✗ Falha ao criar bloco 1\n\n");
         free_block(genesis);
-        return 1;
+        free(chain);
+        return NULL;
     }
     
-    // Teste 4: Verificar integridade da cadeia
-    printf("4. Verificando integridade da cadeia...\n");
-    if (block1->previous_block_hash == genesis->block_hash)
+    chain->blocks[0] = genesis;
+    chain->block_count = 1;
+    return chain;
+}
+
+int validate_block_chain(Blockchain *chain, Block *block)
+{
+    if (!chain || !block || chain->block_count == 0)
+        return 0;
+    
+    uint64_t calculate_hash = calculate_block_hash(block);
+    if (block->block_hash != calculate_hash)
     {
-        printf("   ✓ Cadeia está correta! Bloco 1 referencia o genesis.\n\n");
+        printf("   ERROR: block hash invalid!\n");
+        printf("   Expected: %lu\n", calculate_hash);
+        printf("   Received: %lu\n", block->block_hash);
+        return 0;
     }
-    else
+    
+    Block *last_block = get_last_block(chain);    
+    if (block->previous_block_hash != last_block->block_hash)
     {
-        printf("   ✗ Erro na cadeia! Hashes não correspondem.\n\n");
+        printf("   ERROR: previous_hash invalid!\n");
+        printf("   Expected: %lu\n", last_block->block_hash);
+        printf("   Received: %lu\n", block->previous_block_hash);
+        return 0;
     }
     
-    // Teste 5: Criar terceiro bloco
-    printf("5. Criando terceiro bloco...\n");
-    Transition transition3;
-    transition3.from = 3;
-    transition3.to = 1;
-    transition3.amount = 25;
-    
-    Block *block2 = create_block(2, block1->block_hash, &transition3, 1);
-    if (block2)
+    if (block->id != last_block->id + 1)
     {
-        printf("   ✓ Bloco 2 criado com sucesso!\n");
-        printf("   ID: %d\n", block2->id);
-        printf("   Hash anterior: %lu\n", block2->previous_block_hash);
-        printf("   Hash do bloco: %lu\n", block2->block_hash);
-        printf("   Transições: %d\n\n", block2->transitions_count);
+        printf("   ERROR: invalid block ID!\n");
+        return 0;
     }
     
-    // Resumo da cadeia
-    printf("=== Resumo da Cadeia ===\n");
-    printf("Genesis -> Bloco 1 -> Bloco 2\n");
-    printf("%lu -> %lu -> %lu\n\n", 
-           genesis->block_hash, block1->block_hash, block2->block_hash);
+    return 1;
+}
+
+int add_block(Blockchain *chain, Block *block)
+{
+    if (!validate_block_chain(chain, block))
+        return 0;
     
-    // Limpar memória
-    free_block(genesis);
-    free_block(block1);
-    free_block(block2);
+    Block **new_blocks = (Block **)realloc(chain->blocks, sizeof(Block *) * (chain->block_count + 1));
+    if (!new_blocks)
+        return 0;
     
-    printf("✓ Teste concluído com sucesso!\n");
+    chain->blocks = new_blocks;
+    chain->blocks[chain->block_count] = block;
+    chain->block_count++;
     
-    return 0;
+    return 1;
+}
+
+Block *get_last_block(Blockchain *chain)
+{
+    if (!chain || chain->block_count == 0)
+        return NULL;
+    
+    return chain->blocks[chain->block_count - 1];
+}
+
+Block *get_block_by_id(Blockchain *chain, int id)
+{
+    if (!chain || id < 0 || id >= chain->block_count)
+        return NULL;
+    
+    return chain->blocks[id];
+}
+
+int verify_blockchain_integrity(Blockchain *chain)
+{
+    if (!chain || chain->block_count == 0)
+        return 0;
+    
+    for (long i = 1; i < chain->block_count; i++)
+    {
+        Block *current = chain->blocks[i];
+        Block *previous = chain->blocks[i - 1];
+        
+        if (current->previous_block_hash != previous->block_hash)
+        {
+            printf("   ERROR: broken chain at block %d!\n", current->id);
+            return 0;
+        }
+        
+        uint64_t calculated_hash = calculate_block_hash(current);
+        if (calculated_hash != current->block_hash)
+        {
+            printf("   ERROR: block %d hash has been altered!\n", current->id);
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+void print_blockchain(Blockchain *chain)
+{
+    if (!chain)
+        return;
+    
+    printf("\n=== Blockchain ===\n");
+    printf("Total blocks: %ld\n\n", chain->block_count);
+    
+    for (long i = 0; i < chain->block_count; i++)
+    {
+        Block *block = chain->blocks[i];
+        printf("Block #%d\n", block->id);
+        printf("  Hash: %lu\n", block->block_hash);
+        printf("  Previous Hash: %lu\n", block->previous_block_hash);
+        printf("  Transitions: %d\n", block->transitions_count);
+        
+        for (int j = 0; j < block->transitions_count; j++)
+        {
+            printf("    %d -> %d: %d\n", 
+                   block->transitions[j].from,
+                   block->transitions[j].to,
+                   block->transitions[j].amount);
+        }
+        printf("\n");
+    }
+}
+
+void free_blockchain(Blockchain *chain)
+{
+    if (chain)
+    {
+        for (long i = 0; i < chain->block_count; i++)
+        {
+            free_block(chain->blocks[i]);
+        }
+        free(chain->blocks);
+        free(chain);
+    }
 }
