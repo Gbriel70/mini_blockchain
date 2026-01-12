@@ -139,7 +139,7 @@ void print_blockchain(Blockchain *chain)
         
         for (int j = 0; j < block->transitions_count; j++)
         {
-            printf("    %d -> %d: %d\n", 
+            printf("    %d -> %d: %ld\n", 
                    block->transitions[j].from,
                    block->transitions[j].to,
                    block->transitions[j].amount);
