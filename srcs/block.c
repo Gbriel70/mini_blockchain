@@ -29,6 +29,9 @@ uint64_t calculate_block_hash(const Block *block)
 
 Block *create_block(int id, uint64_t previous_block_hash, Transition *transition, int transition_count)
 {
+    if (id < 0 || previous_block_hash < 0 || !transition || transition_count < 0)
+        return NULL;
+
     Block *block = (Block *)malloc(sizeof(Block));
     if (!block)
         return NULL;
@@ -87,7 +90,7 @@ int validate_block_transitions(const Block *block, const State *current_state, c
             snprintf(error_msg, error_len, "null pointer");
         return 0;
     }
-    
+
     State *temp_state = clone_state(current_state);
     if (!temp_state)
     {
