@@ -12,6 +12,7 @@ typedef struct State
 typedef struct Blockchain Blockchain;
 
 State *create_state(long acconts_count);
+State *clone_state(const State *state);
 void free_state(State *state);
 uint64_t get_balance(State *state, int account_index);
 int set_balance(State *state, int account_index, uint64_t balance);

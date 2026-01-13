@@ -56,7 +56,17 @@ Block *create_block(int id, uint64_t previous_block_hash, Transition *transition
 
 Block *create_block_genesis()
 {
-    return create_block(0, 0, NULL, 0);
+    Block *block = (Block *)malloc(sizeof(Block));
+    if (!block)
+        return NULL;
+    
+    block->id = 0;
+    block->previous_block_hash = 0;
+    block->transitions = NULL;
+    block->transitions_count = 0;
+    block->block_hash = calculate_block_hash(block);
+
+    return block;
 }
 
 void free_block(Block *block)
@@ -67,4 +77,54 @@ void free_block(Block *block)
             free(block->transitions);
         free(block);
     }
+}
+
+int validate_block_transitions(const Block *block, const State *current_state, char *error_msg, size_t error_len)
+{
+    if (!block || !current_state)
+    {
+        if (error_msg && error_len > 0)
+            snprintf(error_msg, error_len, "null pointer");
+        return 0;
+    }
+    
+    State *temp_state = clone_state(current_state);
+    if (!temp_state)
+    {
+        if (error_msg && error_len > 0)
+            snprintf(error_msg, error_len, "failed to clone state");
+        return 0;
+    }
+    
+    for (int i = 0; i < block->transitions_count; i++)
+    {        
+        Validation_Code code = apply_transition(temp_state, &block->transitions[i], error_msg, error_len);
+        
+        if (code != VALIDATION_OK)
+        {
+            free_state(temp_state);
+            return 0;
+        }        
+    }    
+    free_state(temp_state);
+    return 1;
+}
+
+int apply_block_to_state(State *state, const Block *block, char *error_msg, size_t error_len)
+{
+    if (!state || !block)
+    {
+        if (error_msg && error_len > 0)
+            snprintf(error_msg, error_len, "null pointer");
+        return 0;
+    }
+        
+    for (int i = 0; i < block->transitions_count; i++)
+    {   
+        Validation_Code code = apply_transition(state, &block->transitions[i], error_msg, error_len);
+        
+        if (code != VALIDATION_OK)
+            return 0;        
+    }    
+    return 1;
 }

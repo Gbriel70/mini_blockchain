@@ -17,6 +17,22 @@ State *create_state(long acconts_count)
     return state;
 }
 
+State *clone_state(const State *state)
+{
+    if (!state)
+        return NULL;
+    
+    State *clone = create_state(state->number_of_accounts);
+    if (!clone)
+        return NULL;
+    
+    for (long i = 0; i < state->number_of_accounts; i++)
+    {
+        clone->balances[i] = state->balances[i];
+    }
+    return clone;
+}
+
 void free_state(State *state)
 {
     if (state)
