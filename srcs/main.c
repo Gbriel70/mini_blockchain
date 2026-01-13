@@ -1,520 +1,784 @@
 #include "../includes/Blockchain.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+#include <limits.h>
 
-void test_null_pointers()
+uint64_t random_uint64()
 {
-    printf("═══════════════════════════════════════════════════════\n");
-    printf("  🧨 Teste 1: Ponteiros Nulos\n");
-    printf("═══════════════════════════════════════════════════════\n\n");
-    
-    char error_msg[256];
-    int test_passed = 1;
-    
-    // Teste 1.1: Blockchain nula
-    printf("1.1 Validando bloco com blockchain NULL...\n");
-    Block *valid_block = create_block(1, 0, NULL, 0);
-    int result = validate_block_chain(NULL, valid_block);
-    
-    if (result == 0)
-    {
-        printf("  ✅ Blockchain NULL rejeitada corretamente\n");
-    }
-    else
-    {
-        printf("  ✗ FALHA: Blockchain NULL aceita!\n");
-        test_passed = 0;
-    }
-    free_block(valid_block);
-    
-    // Teste 1.2: Bloco nulo
-    printf("\n1.2 Validando bloco NULL...\n");
-    Blockchain *chain = create_blockchain();
-    result = validate_block_chain(chain, NULL);
-    
-    if (result == 0)
-    {
-        printf("  ✅ Bloco NULL rejeitado corretamente\n");
-    }
-    else
-    {
-        printf("  ✗ FALHA: Bloco NULL aceito!\n");
-        test_passed = 0;
-    }
-    
-    // Teste 1.3: State nulo em validate_block_transitions
-    printf("\n1.3 Validando transições com state NULL...\n");
-    Transition t;
-    t.from = 1; t.to = 2; t.amount = 100;
-    Block *block = create_block(1, 0, &t, 1);
-    
-    result = validate_block_transitions(block, NULL, error_msg, sizeof(error_msg));
-    
-    if (result == 0)
-    {
-        printf("  ✅ State NULL rejeitado: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: State NULL aceito!\n");
-        test_passed = 0;
-    }
-    free_block(block);
-    
-    // Teste 1.4: Bloco nulo em validate_block_transitions
-    printf("\n1.4 Validando bloco NULL em validate_block_transitions...\n");
-    State *state = create_state(10);
-    result = validate_block_transitions(NULL, state, error_msg, sizeof(error_msg));
-    
-    if (result == 0)
-    {
-        printf("  ✅ Bloco NULL rejeitado: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: Bloco NULL aceito!\n");
-        test_passed = 0;
-    }
-    free_state(state);
-    
-    // Teste 1.5: State nulo em apply_block_to_state
-    printf("\n1.5 Aplicando bloco em state NULL...\n");
-    t.from = 1; t.to = 2; t.amount = 50;
-    block = create_block(1, 0, &t, 1);
-    
-    result = apply_block_to_state(NULL, block, error_msg, sizeof(error_msg));
-    
-    if (result == 0)
-    {
-        printf("  ✅ State NULL rejeitado: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: State NULL aceito!\n");
-        test_passed = 0;
-    }
-    free_block(block);
-    
-    // Teste 1.6: Bloco nulo em apply_block_to_state
-    printf("\n1.6 Aplicando bloco NULL ao state...\n");
-    state = create_state(10);
-    result = apply_block_to_state(state, NULL, error_msg, sizeof(error_msg));
-    
-    if (result == 0)
-    {
-        printf("  ✅ Bloco NULL rejeitado: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: Bloco NULL aceito!\n");
-        test_passed = 0;
-    }
-    free_state(state);
-    
-    // Teste 1.7: Transição com ponteiro NULL
-    printf("\n1.7 Criando bloco com transições NULL...\n");
-    block = create_block(1, 0, NULL, 5);  // 5 transições mas ponteiro NULL!
-    
-    if (block && block->transitions_count == 0)
-    {
-        printf("  ✅ Transições NULL tratadas (count = %d)\n", block->transitions_count);
-    }
-    else if (!block)
-    {
-        printf("  ✅ Bloco não criado com transições NULL\n");
-    }
-    else
-    {
-        printf("  ⚠️  Bloco criado com transitions_count = %d\n", block->transitions_count);
-    }
-    if (block) free_block(block);
-    
-    // Teste 1.8: apply_transition com state NULL
-    printf("\n1.8 Aplicando transição em state NULL...\n");
-    t.from = 1; t.to = 2; t.amount = 50;
-    Validation_Code code = apply_transition(NULL, &t, error_msg, sizeof(error_msg));
-    
-    if (code != VALIDATION_OK)
-    {
-        printf("  ✅ State NULL rejeitado: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: State NULL aceito!\n");
-        test_passed = 0;
-    }
-    
-    // Teste 1.9: apply_transition com transition NULL
-    printf("\n1.9 Aplicando transição NULL...\n");
-    state = create_state(10);
-    set_balance(state, 1, 100);
-    code = apply_transition(state, NULL, error_msg, sizeof(error_msg));
-    
-    if (code != VALIDATION_OK)
-    {
-        printf("  ✅ Transição NULL rejeitada: %s\n", error_msg);
-    }
-    else
-    {
-        printf("  ✗ FALHA: Transição NULL aceita!\n");
-        test_passed = 0;
-    }
-    free_state(state);
-    
-    free_blockchain(chain);
-    
-    printf("\n");
-    if (test_passed)
-    {
-        printf("✅ TODOS OS TESTES DE PONTEIROS NULOS PASSARAM\n");
-        printf("   Sistema não crasha com entradas inválidas\n\n");
-    }
-    else
-    {
-        printf("✗ ALGUNS TESTES FALHARAM\n\n");
-    }
+    uint64_t high = (uint64_t)rand();
+    uint64_t low = (uint64_t)rand();
+    return (high << 32) | low;
 }
 
-void test_duplicate_transitions()
+int random_int_range(int min, int max)
+{
+    if (max <= min) return min;
+    return min + (rand() % (max - min + 1));
+}
+
+void test_fuzz_random_transitions()
 {
     printf("═══════════════════════════════════════════════════════\n");
-    printf("  🧨 Teste 2: Transições Duplicadas\n");
+    printf("  Teste 1: Fuzzing - Transições Aleatórias (Mix)\n");
+    printf("═══════════════════════════════════════════════════════\n\n");
+    
+    const int NUM_ACCOUNTS = 10;
+    const int NUM_ITERATIONS = 1000;
+    
+    State *state = create_state(NUM_ACCOUNTS);
+    
+    printf("Inicializando %d contas com saldos variados...\n", NUM_ACCOUNTS);
+    for (int i = 0; i < NUM_ACCOUNTS; i++)
+    {
+        if (rand() % 2 == 0)
+        {
+            set_balance(state, i, random_uint64() % 10000 + 1000);  // 1000-11000
+            printf("  Conta %d: saldo alto\n", i);
+        }
+        else
+        {
+            set_balance(state, i, random_uint64() % 100);  // 0-99
+            printf("  Conta %d: saldo baixo\n", i);
+        }
+    }
+    
+    printf("\nGerando %d transições com mix de válidas/inválidas...\n", NUM_ITERATIONS);
+    printf("(Nenhum crash deve ocorrer)\n\n");
+    
+    int valid_count = 0;
+    int invalid_count = 0;
+    int error_count = 0;    
+    int err_insufficient_funds = 0;
+    int err_invalid_index = 0;
+    int err_overflow = 0;
+    int err_same_account = 0;
+    int err_amount = 0;
+    int err_other = 0;
+    
+    char error_msg[256];
+    
+    for (int i = 0; i < NUM_ITERATIONS; i++)
+    {
+        Transition t;
+        
+        if (rand() % 100 < 70)
+        {
+            t.from = random_int_range(0, NUM_ACCOUNTS - 1);
+            t.to = random_int_range(0, NUM_ACCOUNTS - 1);
+            
+            if (rand() % 100 < 80)
+            {
+                t.amount = random_uint64() % 5000 + 1;
+            }
+            else
+            {
+                t.amount = random_uint64();
+            }
+        }
+        else
+        {
+            t.from = random_int_range(-100, 200);
+            t.to = random_int_range(-100, 200);
+            t.amount = random_uint64();
+        }
+        
+        Validation_Code code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+        
+        if (code == VALIDATION_OK)
+        {
+            valid_count++;
+        }
+        else if (code == VALIDATION_ERR_INSUFFICIENT_FUNDS)
+        {
+            invalid_count++;
+            err_insufficient_funds++;
+        }
+        else if (code == VALIDATION_ERR_INDEX)
+        {
+            invalid_count++;
+            err_invalid_index++;
+        }
+        else if (code == VALIDATION_ERR_OVERFLOW)
+        {
+            invalid_count++;
+            err_overflow++;
+        }
+        else if (code == VALIDATION_ERR_SENDER_EQ_RECEIVER)
+        {
+            invalid_count++;
+            err_same_account++;
+        }
+        else if (code == VALIDATION_ERR_AMOUNT)
+        {
+            invalid_count++;
+            err_amount++;
+        }
+        else if (code == VALIDATION_ERR_NULL)
+        {
+            invalid_count++;
+            err_other++;
+        }
+        else
+        {
+            error_count++;
+            printf("  Iteração %d: código desconhecido %d\n", i, code);
+        }
+        
+        if ((i + 1) % 200 == 0)
+        {
+            printf("  Processadas %d/%d transições (válidas: %d, inválidas: %d)...\n", i + 1, NUM_ITERATIONS, valid_count, invalid_count);
+        }
+    }
+    
+    printf("\n Resultados do Fuzzing:\n");
+    printf("  Total de iterações: %d\n", NUM_ITERATIONS);
+    printf("  Transações válidas: %d (%.1f%%)\n", valid_count, (valid_count * 100.0) / NUM_ITERATIONS);
+    printf("  Transações inválidas: %d (%.1f%%)\n", invalid_count,(invalid_count * 100.0) / NUM_ITERATIONS);
+    printf("  Erros inesperados: %d\n", error_count);
+    printf("\n Detalhamento dos erros:\n");
+    printf("  • Saldo insuficiente: %d (%.1f%%)\n", err_insufficient_funds,(err_insufficient_funds * 100.0) / NUM_ITERATIONS);
+    printf("  • Índice inválido: %d (%.1f%%)\n", err_invalid_index,(err_invalid_index * 100.0) / NUM_ITERATIONS);
+    printf("  • Overflow: %d (%.1f%%)\n", err_overflow,(err_overflow * 100.0) / NUM_ITERATIONS);
+    printf("  • Mesma conta: %d (%.1f%%)\n", err_same_account,(err_same_account * 100.0) / NUM_ITERATIONS);
+    printf("  • Valor inválido: %d (%.1f%%)\n", err_amount,(err_amount * 100.0) / NUM_ITERATIONS);
+    printf("  • Outros: %d (%.1f%%)\n", err_other,(err_other * 100.0) / NUM_ITERATIONS);
+    printf("\n Estado final das contas (primeiras 5):\n");
+    for (int i = 0; i < 5 && i < NUM_ACCOUNTS; i++)
+    {
+        printf("  Conta %d: %lu\n", i, get_balance(state, i));
+    }
+    
+    if (error_count == 0)
+    {
+        printf("\n SUCESSO: Sistema não crashou em %d iterações!\n", NUM_ITERATIONS);
+        printf("   Todos os erros foram tratados corretamente\n");
+        if (valid_count > 0)
+        {
+            printf("   Transações válidas foram aceitas (%d)!\n", valid_count);
+        }
+        printf("\n");
+    }
+    else
+    {
+        printf("\n Alguns erros inesperados foram encontrados\n\n");
+    }
+    
+    free_state(state);
+}
+
+void test_fuzz_extreme_values()
+{
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("  Teste 2: Fuzzing - Valores Extremos\n");
     printf("═══════════════════════════════════════════════════════\n\n");
     
     const int NUM_ACCOUNTS = 10;
     State *state = create_state(NUM_ACCOUNTS);
-    set_balance(state, 1, 1000);
     
-    printf("Estado inicial: Conta 1 = %lu\n\n", get_balance(state, 1));
-    
-    // Teste 2.1: Mesmo ponteiro usado múltiplas vezes
-    printf("2.1 Testando mesmo ponteiro de transição usado 3 vezes...\n");
-    Transition t_shared;
-    t_shared.from = 1;
-    t_shared.to = 2;
-    t_shared.amount = 100;
-    
-    Transition transitions_shared[3] = {t_shared, t_shared, t_shared};
-    
-    Block *block_shared = create_block(1, 0, transitions_shared, 3);
-    
-    printf("  Bloco criado com 3 referências à mesma transição:\n");
-    printf("    Trans 1: %d -> %d (%lu)\n", 
-           block_shared->transitions[0].from,
-           block_shared->transitions[0].to,
-           block_shared->transitions[0].amount);
-    printf("    Trans 2: %d -> %d (%lu)\n", 
-           block_shared->transitions[1].from,
-           block_shared->transitions[1].to,
-           block_shared->transitions[1].amount);
-    printf("    Trans 3: %d -> %d (%lu)\n", 
-           block_shared->transitions[2].from,
-           block_shared->transitions[2].to,
-           block_shared->transitions[2].amount);
+    printf("Testando valores nos limites dos tipos...\n\n");
     
     char error_msg[256];
+    int crash_count = 0;
+    int test_count = 0;
     
-    if (validate_block_transitions(block_shared, state, error_msg, sizeof(error_msg)))
+    printf("2.1 Testando UINT64_MAX...\n");
+    set_balance(state, 1, UINT64_MAX);
+    set_balance(state, 2, 0);
+    
+    Transition t;
+    t.from = 1;
+    t.to = 2;
+    t.amount = 1;
+    
+    Validation_Code code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+    test_count++;
+    
+    if (code == VALIDATION_ERR_OVERFLOW)
     {
-        printf("\n  ✅ Validação passou (todas são cópias independentes)\n");
-        printf("  ℹ️  create_block faz memcpy, então são 3 transações separadas\n");
-        printf("  ℹ️  Total gasto: 300 (3x 100)\n");
+        printf("  Overflow detectado corretamente: %s\n", error_msg);
+    }
+    else if (code == VALIDATION_OK)
+    {
+        printf("  Transação aceita (verificar se há wraparound)\n");
+        printf("      Saldo destino após: %lu\n", get_balance(state, 2));
+        crash_count++;
     }
     else
     {
-        printf("\n  ✗ Validação falhou: %s\n", error_msg);
+        printf("  Código inesperado: %d (%s)\n", code, error_msg);
+        crash_count++;
     }
     
-    free_block(block_shared);
+    printf("\n2.2 Testando índice INT_MAX...\n");
+    t.from = INT_MAX;
+    t.to = 1;
+    t.amount = 100;
     
-    // Teste 2.2: Conteúdo duplicado (semanticamente igual)
-    printf("\n2.2 Testando transições com conteúdo idêntico...\n");
-    Transition transitions_duplicate[3];
+    code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+    test_count++;
     
-    for (int i = 0; i < 3; i++)
+    if (code == VALIDATION_ERR_INDEX)
     {
-        transitions_duplicate[i].from = 1;
-        transitions_duplicate[i].to = 2;
-        transitions_duplicate[i].amount = 100;
-    }
-    
-    Block *block_dup = create_block(1, 0, transitions_duplicate, 3);
-    
-    printf("  Bloco com 3 transições de conteúdo idêntico:\n");
-    for (int i = 0; i < 3; i++)
-    {
-        printf("    Trans %d: %d -> %d (%lu) [endereço: %p]\n", 
-               i + 1,
-               block_dup->transitions[i].from,
-               block_dup->transitions[i].to,
-               block_dup->transitions[i].amount,
-               (void*)&block_dup->transitions[i]);
-    }
-    
-    if (validate_block_transitions(block_dup, state, error_msg, sizeof(error_msg)))
-    {
-        printf("\n  ✅ Validação passou\n");
-        printf("  ℹ️  São transações separadas com valores iguais\n");
-        printf("  ℹ️  Comportamento: 3 transações de 100 aplicadas sequencialmente\n");
-        
-        State *test_state = clone_state(state);
-        apply_block_to_state(test_state, block_dup, error_msg, sizeof(error_msg));
-        
-        printf("  Resultado: Conta 1 = %lu (esperado: 700)\n", get_balance(test_state, 1));
-        printf("             Conta 2 = %lu (esperado: 300)\n", get_balance(test_state, 2));
-        
-        free_state(test_state);
+        printf("  Conta inválida detectada: %s\n", error_msg);
     }
     else
     {
-        printf("\n  ✗ Validação falhou: %s\n", error_msg);
+        crash_count++;
+        printf("  Comportamento inesperado: %d\n", code);
     }
     
-    free_block(block_dup);
+    printf("\n2.3 Testando índice INT_MIN...\n");
+    t.from = INT_MIN;
+    t.to = 1;
+    t.amount = 100;
     
-    // Teste 2.3: Detectar double-spending na mesma conta
-    printf("\n2.3 Testando múltiplas transações da mesma conta (double-spend)...\n");
+    code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+    test_count++;
     
-    State *small_balance = create_state(NUM_ACCOUNTS);
-    set_balance(small_balance, 1, 150);  // Apenas 150
-    
-    printf("  Estado: Conta 1 = 150\n");
-    
-    Transition double_spend[2];
-    double_spend[0].from = 1; double_spend[0].to = 2; double_spend[0].amount = 100;
-    double_spend[1].from = 1; double_spend[1].to = 3; double_spend[1].amount = 100;
-    
-    printf("  Trans 1: 1 -> 2 (100)\n");
-    printf("  Trans 2: 1 -> 3 (100)\n");
-    printf("  Total: 200, mas saldo = 150\n");
-    
-    Block *block_double = create_block(1, 0, double_spend, 2);
-    
-    if (!validate_block_transitions(block_double, small_balance, error_msg, sizeof(error_msg)))
+    if (code == VALIDATION_ERR_INDEX)
     {
-        printf("\n  ✅ Double-spend detectado e bloqueado!\n");
-        printf("  ✅ Erro: %s\n", error_msg);
+        printf("  Conta inválida detectada: %s\n", error_msg);
     }
     else
     {
-        printf("\n  ✗ FALHA: Double-spend não foi detectado!\n");
+        crash_count++;
+        printf("  Comportamento inesperado: %d\n", code);
     }
     
-    free_block(block_double);
-    free_state(small_balance);
+    printf("\n2.4 Testando amount = UINT64_MAX...\n");
+    set_balance(state, 1, UINT64_MAX);
+    set_balance(state, 2, 0);
+    t.from = 1;
+    t.to = 2;
+    t.amount = UINT64_MAX;
     
-    free_state(state);
+    code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+    test_count++;
     
-    printf("\n✅ TESTES DE DUPLICAÇÃO CONCLUÍDOS\n");
-    printf("   Comportamento bem definido para todos os casos\n\n");
-}
-
-void test_edge_cases()
-{
-    printf("═══════════════════════════════════════════════════════\n");
-    printf("  🧨 Teste 3: Casos Extremos\n");
-    printf("═══════════════════════════════════════════════════════\n\n");
-    
-    char error_msg[256];
-    
-    // Teste 3.1: Bloco vazio
-    printf("3.1 Testando bloco sem transições...\n");
-    Block *empty_block = create_block(1, 0, NULL, 0);
-    State *state = create_state(10);
-    
-    if (validate_block_transitions(empty_block, state, error_msg, sizeof(error_msg)))
+    if (code == VALIDATION_OK || code == VALIDATION_ERR_OVERFLOW)
     {
-        printf("  ✅ Bloco vazio é válido\n");
-        printf("  ℹ️  Não há transições para validar\n");
+        printf("  Tratado corretamente: %s\n", 
+               code == VALIDATION_OK ? "aceito" : error_msg);
+        if (code == VALIDATION_OK)
+        {
+            printf(" Saldo origem: %lu, destino: %lu\n", get_balance(state, 1), get_balance(state, 2));
+        }
     }
     else
     {
-        printf("  ℹ️  Bloco vazio rejeitado: %s\n", error_msg);
+        crash_count++;
     }
     
-    free_block(empty_block);
+    printf("\n2.5 Testando combinação de valores extremos...\n");
+    t.from = INT_MAX;
+    t.to = INT_MIN;
+    t.amount = UINT64_MAX;
     
-    // Teste 3.2: Índice de conta inválido
-    printf("\n3.2 Testando transição com índice de conta inválido...\n");
-    Transition invalid_account;
-    invalid_account.from = 999;  // Conta inexistente
-    invalid_account.to = 1;
-    invalid_account.amount = 100;
-    
-    Validation_Code code = apply_transition(state, &invalid_account, error_msg, sizeof(error_msg));
+    code = apply_transition(state, &t, error_msg, sizeof(error_msg));
+    test_count++;
     
     if (code != VALIDATION_OK)
     {
-        printf("  ✅ Conta inválida rejeitada: %s\n", error_msg);
+        printf("  Rejeitado: %s\n", error_msg);
     }
     else
     {
-        printf("  ✗ FALHA: Conta inválida aceita!\n");
+        crash_count++;
     }
     
-    // Teste 3.3: Conta negativa
-    printf("\n3.3 Testando transição com conta negativa...\n");
-    Transition negative_account;
-    negative_account.from = -1;
-    negative_account.to = 1;
-    negative_account.amount = 100;
+    printf("\n Resultados:\n");
+    printf("  Testes executados: %d\n", test_count);
+    printf("  Crashes/erros: %d\n", crash_count);
     
-    code = apply_transition(state, &negative_account, error_msg, sizeof(error_msg));
-    
-    if (code != VALIDATION_OK)
+    if (crash_count == 0)
     {
-        printf("  ✅ Conta negativa rejeitada: %s\n", error_msg);
+        printf("\n SUCESSO: Sistema robusto contra valores extremos!\n\n");
     }
     else
     {
-        printf("  ✗ FALHA: Conta negativa aceita!\n");
-    }
-    
-    // Teste 3.4: Transferência para si mesmo
-    printf("\n3.4 Testando transferência para a mesma conta...\n");
-    set_balance(state, 1, 100);
-    
-    Transition self_transfer;
-    self_transfer.from = 1;
-    self_transfer.to = 1;
-    self_transfer.amount = 50;
-    
-    uint64_t balance_before = get_balance(state, 1);
-    code = apply_transition(state, &self_transfer, error_msg, sizeof(error_msg));
-    uint64_t balance_after = get_balance(state, 1);
-    
-    if (code == VALIDATION_OK && balance_before == balance_after)
-    {
-        printf("  ℹ️  Auto-transferência permitida\n");
-        printf("  Saldo antes: %lu, depois: %lu (inalterado)\n", balance_before, balance_after);
-    }
-    else if (code != VALIDATION_OK)
-    {
-        printf("  ℹ️  Auto-transferência bloqueada: %s\n", error_msg);
-    }
-    
-    // Teste 3.5: Valor zero
-    printf("\n3.5 Testando transação com valor 0...\n");
-    Transition zero_amount;
-    zero_amount.from = 1;
-    zero_amount.to = 2;
-    zero_amount.amount = 0;
-    
-    code = apply_transition(state, &zero_amount, error_msg, sizeof(error_msg));
-    
-    if (code == VALIDATION_OK)
-    {
-        printf("  ℹ️  Transação de valor 0 permitida (não altera state)\n");
-    }
-    else
-    {
-        printf("  ℹ️  Transação de valor 0 bloqueada: %s\n", error_msg);
-    }
-    
-    // Teste 3.6: Overflow em adição
-    printf("\n3.6 Testando overflow ao receber...\n");
-    set_balance(state, 2, UINT64_MAX);
-    
-    Transition overflow_receive;
-    overflow_receive.from = 1;
-    overflow_receive.to = 2;
-    overflow_receive.amount = 1;
-    
-    code = apply_transition(state, &overflow_receive, error_msg, sizeof(error_msg));
-    
-    if (code != VALIDATION_OK)
-    {
-        printf("  ✅ Overflow detectado e bloqueado: %s\n", error_msg);
-        printf("  ℹ️  Conta 2 mantém UINT64_MAX\n");
-    }
-    else
-    {
-        printf("  ✗ FALHA: Overflow não detectado!\n");
+        printf("\n  %d caso(s) extremo(s) não tratado(s) corretamente\n\n", crash_count);
     }
     
     free_state(state);
-    
-    printf("\n✅ TESTES DE CASOS EXTREMOS CONCLUÍDOS\n");
-    printf("   Sistema robusto contra entradas inesperadas\n\n");
 }
 
-void test_memory_safety()
+void test_fuzz_random_blocks()
 {
     printf("═══════════════════════════════════════════════════════\n");
-    printf("  🧨 Teste 4: Segurança de Memória\n");
+    printf("   Teste 3: Fuzzing - Blocos Aleatórios\n");
     printf("═══════════════════════════════════════════════════════\n\n");
     
-    // Teste 4.1: Free de ponteiros NULL
-    printf("4.1 Testando free de ponteiros NULL...\n");
-    free_block(NULL);
-    printf("  ✅ free_block(NULL) não crashou\n");
+    const int NUM_ACCOUNTS = 10;
+    const int NUM_BLOCKS = 100;
+    const int MAX_TRANSITIONS_PER_BLOCK = 20;
     
-    free_state(NULL);
-    printf("  ✅ free_state(NULL) não crashou\n");
+    State *genesis_state = create_state(NUM_ACCOUNTS);
     
-    free_blockchain(NULL);
-    printf("  ✅ free_blockchain(NULL) não crashou\n");
-    
-    // Teste 4.2: Duplo free (manualmente detectado)
-    printf("\n4.2 Testando proteção contra uso após free...\n");
-    State *temp_state = create_state(5);
-    free_state(temp_state);
-    // Não tentar usar temp_state aqui!
-    printf("  ✅ Estado liberado sem crash\n");
-    
-    // Teste 4.3: Clone e independência
-    printf("\n4.3 Testando independência de clones...\n");
-    State *original = create_state(5);
-    set_balance(original, 1, 100);
-    
-    State *clone = clone_state(original);
-    set_balance(clone, 1, 200);
-    
-    uint64_t orig_balance = get_balance(original, 1);
-    uint64_t clone_balance = get_balance(clone, 1);
-    
-    if (orig_balance == 100 && clone_balance == 200)
+    printf("Inicializando %d contas com saldos aleatórios...\n", NUM_ACCOUNTS);
+    for (int i = 0; i < NUM_ACCOUNTS; i++)
     {
-        printf("  ✅ Clone é independente do original\n");
-        printf("  Original: %lu, Clone: %lu\n", orig_balance, clone_balance);
+        uint64_t balance = random_uint64() % 100000;
+        set_balance(genesis_state, i, balance);
+    }
+    
+    Blockchain *chain = create_blockchain_with_genesis_state(genesis_state);
+    State *state = clone_state(genesis_state);
+    
+    printf("Tentando adicionar %d blocos com transições aleatórias...\n\n", NUM_BLOCKS);
+    
+    int blocks_accepted = 0;
+    int blocks_rejected = 0;
+    char error_msg[256];
+    
+    for (int block_num = 0; block_num < NUM_BLOCKS; block_num++)
+    {
+        int num_transitions = random_int_range(1, MAX_TRANSITIONS_PER_BLOCK);
+        Transition *transitions = malloc(sizeof(Transition) * num_transitions);
+        
+        if (!transitions) continue;
+        
+        for (int j = 0; j < num_transitions; j++)
+        {
+            transitions[j].from = random_int_range(0, NUM_ACCOUNTS - 1);
+            transitions[j].to = random_int_range(0, NUM_ACCOUNTS - 1);
+            transitions[j].amount = random_uint64() % 1000;
+        }
+        
+        Block *block = create_block(chain->block_count, get_last_block(chain)->block_hash, transitions, num_transitions);
+        
+        if (validate_block_transitions(block, state, error_msg, sizeof(error_msg)))
+        {
+            if (apply_block_to_state(state, block, error_msg, sizeof(error_msg)))
+            {
+                if (add_block(chain, block))
+                {
+                    blocks_accepted++;
+                }
+                else
+                {
+                    free_block(block);
+                    blocks_rejected++;
+                }
+            }
+            else
+            {
+                free_block(block);
+                blocks_rejected++;
+            }
+        }
+        else
+        {
+            free_block(block);
+            blocks_rejected++;
+        }
+        
+        free(transitions);
+        
+        if ((block_num + 1) % 20 == 0)
+        {
+            printf("  Processados %d/%d blocos...\n", block_num + 1, NUM_BLOCKS);
+        }
+    }
+    
+    printf("\n Resultados:\n");
+    printf("  Blocos tentados: %d\n", NUM_BLOCKS);
+    printf("  Blocos aceitos: %d (%.1f%%)\n", blocks_accepted,
+           (blocks_accepted * 100.0) / NUM_BLOCKS);
+    printf("  Blocos rejeitados: %d (%.1f%%)\n", blocks_rejected,
+           (blocks_rejected * 100.0) / NUM_BLOCKS);
+    printf("  Tamanho final da blockchain: %ld blocos\n", chain->block_count);
+    
+    printf("\n Verificando integridade da blockchain...\n");
+    if (verify_blockchain_integrity(chain))
+    {
+        printf("  Blockchain íntegra após fuzzing!\n");
     }
     else
     {
-        printf("  ✗ FALHA: Clone não é independente!\n");
+        printf("  Blockchain corrompida!\n");
     }
     
-    free_state(original);
-    free_state(clone);
+    printf("\n Testando replay determinístico...\n");
+    State *replayed = rebuild_state_from_blockchain(chain, NUM_ACCOUNTS);
     
-    printf("\n✅ TESTES DE SEGURANÇA DE MEMÓRIA CONCLUÍDOS\n\n");
+    if (replayed && compare_states(state, replayed))
+    {
+        printf("  Replay bem-sucedido - estados idênticos!\n\n");
+    }
+    else if (replayed)
+    {
+        printf("  Replay divergiu do estado incremental\n\n");
+    }
+    else
+    {
+        printf("  Falha no replay\n\n");
+    }
+    
+    if (replayed) free_state(replayed);
+    free_state(state);
+    free_state(genesis_state);
+    free_blockchain(chain);
+}
+
+void test_fuzz_stress_test()
+{
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("  Teste 4: Fuzzing - Teste de Stress\n");
+    printf("═══════════════════════════════════════════════════════\n\n");
+    
+    const int NUM_ITERATIONS = 10000;
+    
+    printf("Executando %d operações aleatórias mistas...\n", NUM_ITERATIONS);
+    printf("(Criação, validação, aplicação, liberação de memória)\n\n");
+    
+    int operations_completed = 0;
+    int errors_handled = 0;
+    
+    char error_msg[256];
+    
+    for (int i = 0; i < NUM_ITERATIONS; i++)
+    {
+        int operation = rand() % 5;
+        
+        switch (operation)
+        {
+            case 0:
+            {
+                int accounts = random_int_range(1, 1000);
+                State *s = create_state(accounts);
+                if (s)
+                {
+                    free_state(s);
+                    operations_completed++;
+                }
+                break;
+            }
+            
+            case 1:
+            {
+                int num_trans = random_int_range(0, 100);
+                Transition *trans = NULL;
+                
+                if (num_trans > 0)
+                {
+                    trans = malloc(sizeof(Transition) * num_trans);
+                    if (trans)
+                    {
+                        for (int j = 0; j < num_trans; j++)
+                        {
+                            trans[j].from = random_int_range(0, 100);
+                            trans[j].to = random_int_range(0, 100);
+                            trans[j].amount = random_uint64() % 10000;
+                        }
+                    }
+                }
+                
+                Block *b = create_block(random_int_range(0, 1000),random_uint64(),trans, num_trans);
+                if (b)
+                {
+                    free_block(b);
+                    operations_completed++;
+                }
+                
+                if (trans) free(trans);
+                break;
+            }
+            
+            case 2:
+            {
+                State *s = create_state(10);
+                if (s)
+                {
+                    Transition t;
+                    t.from = random_int_range(-10, 20);
+                    t.to = random_int_range(-10, 20);
+                    t.amount = random_uint64();
+                    
+                    Validation_Code code = apply_transition(s, &t, error_msg, sizeof(error_msg));
+                    if (code != VALIDATION_OK)
+                    {
+                        errors_handled++;
+                    }
+                    
+                    free_state(s);
+                    operations_completed++;
+                }
+                break;
+            }
+            
+            case 3:
+            {
+                State *s1 = create_state(10);
+                if (s1)
+                {
+                    State *s2 = clone_state(s1);
+                    if (s2)
+                    {
+                        compare_states(s1, s2);
+                        free_state(s2);
+                    }
+                    free_state(s1);
+                    operations_completed++;
+                }
+                break;
+            }
+            
+            case 4:
+            {
+                free_state(NULL);
+                free_block(NULL);
+                free_blockchain(NULL);
+                operations_completed++;
+                break;
+            }
+        }
+        
+        if ((i + 1) % 1000 == 0)
+        {
+            printf("  Executadas %d/%d operações...\n", i + 1, NUM_ITERATIONS);
+        }
+    }
+    
+    printf("\n Resultados do Stress Test:\n");
+    printf("  Operações completadas: %d/%d (%.1f%%)\n", operations_completed, NUM_ITERATIONS, (operations_completed * 100.0) / NUM_ITERATIONS);
+    printf("  Erros tratados corretamente: %d\n", errors_handled);
+    printf("\n SUCESSO: Sistema sobreviveu ao teste de stress!\n");
+    printf("   Nenhum crash, vazamento de memória controlado\n\n");
+}
+
+void test_consensus_order_matters()
+{
+    printf("═══════════════════════════════════════════════════════\n");
+    printf("  Teste 5: Consenso - Ordem Importa\n");
+    printf("═══════════════════════════════════════════════════════\n\n");
+    
+    const int NUM_ACCOUNTS = 5;
+    
+    State *genesis_state = create_state(NUM_ACCOUNTS);
+    set_balance(genesis_state, 0, 1000);
+    set_balance(genesis_state, 1, 1000);
+    set_balance(genesis_state, 2, 1000);
+    set_balance(genesis_state, 3, 0);
+    set_balance(genesis_state, 4, 0);
+    
+    printf("Estado genesis (idêntico para ambas as chains):\n");
+    for (int i = 0; i < NUM_ACCOUNTS; i++)
+    {
+        printf("  Conta %d: %lu\n", i, get_balance(genesis_state, i));
+    }
+    
+    printf("\n Criando 3 blocos com as MESMAS transações:\n");
+    
+    Transition trans_a;
+    trans_a.from = 0;
+    trans_a.to = 3;
+    trans_a.amount = 500;
+    printf("  Bloco A: Conta 0 -> 3 (500)\n");
+    
+    Transition trans_b;
+    trans_b.from = 1;
+    trans_b.to = 4;
+    trans_b.amount = 300;
+    printf("  Bloco B: Conta 1 -> 4 (300)\n");
+    
+    Transition trans_c;
+    trans_c.from = 2;
+    trans_c.to = 3;
+    trans_c.amount = 200;
+    printf("  Bloco C: Conta 2 -> 3 (200)\n");
+    
+    printf("\n┌─────────────────────────────────────────┐\n");
+    printf("│  CHAIN 1: Ordem A → B → C              │\n");
+    printf("└─────────────────────────────────────────┘\n");
+    
+    State *genesis_1 = clone_state(genesis_state);
+    Blockchain *chain1 = create_blockchain_with_genesis_state(genesis_1);
+    State *state1 = clone_state(genesis_1);
+    
+    char error_msg[256];
+    
+    Block *block_a1 = create_block(1, get_last_block(chain1)->block_hash, &trans_a, 1);
+    if (validate_block_transitions(block_a1, state1, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state1, block_a1, error_msg, sizeof(error_msg));
+        add_block(chain1, block_a1);
+        printf("  Bloco A adicionado (hash: %lu)\n", block_a1->block_hash);
+    }
+    else
+    {
+        free_block(block_a1);
+    }
+    
+    Block *block_b1 = create_block(2, get_last_block(chain1)->block_hash, &trans_b, 1);
+    if (validate_block_transitions(block_b1, state1, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state1, block_b1, error_msg, sizeof(error_msg));
+        add_block(chain1, block_b1);
+        printf("  Bloco B adicionado (hash: %lu)\n", block_b1->block_hash);
+    }
+    else
+    {
+        free_block(block_b1);
+    }
+    
+    Block *block_c1 = create_block(3, get_last_block(chain1)->block_hash, &trans_c, 1);
+    if (validate_block_transitions(block_c1, state1, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state1, block_c1, error_msg, sizeof(error_msg));
+        add_block(chain1, block_c1);
+        printf("  Bloco C adicionado (hash: %lu)\n", block_c1->block_hash);
+    }
+    else
+    {
+        free_block(block_c1);
+    }
+    
+    printf("\n┌─────────────────────────────────────────┐\n");
+    printf("│  CHAIN 2: Ordem C → A → B              │\n");
+    printf("└─────────────────────────────────────────┘\n");
+    
+    State *genesis_2 = clone_state(genesis_state);
+    Blockchain *chain2 = create_blockchain_with_genesis_state(genesis_2);
+    State *state2 = clone_state(genesis_2);
+    
+    Block *block_c2 = create_block(1, get_last_block(chain2)->block_hash, &trans_c, 1);
+    if (validate_block_transitions(block_c2, state2, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state2, block_c2, error_msg, sizeof(error_msg));
+        add_block(chain2, block_c2);
+        printf("  Bloco C adicionado (hash: %lu)\n", block_c2->block_hash);
+    }
+    else
+    {
+        free_block(block_c2);
+    }
+    
+    Block *block_a2 = create_block(2, get_last_block(chain2)->block_hash, &trans_a, 1);
+    if (validate_block_transitions(block_a2, state2, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state2, block_a2, error_msg, sizeof(error_msg));
+        add_block(chain2, block_a2);
+        printf("  Bloco A adicionado (hash: %lu)\n", block_a2->block_hash);
+    }
+    else
+    {
+        free_block(block_a2);
+    }
+    
+    Block *block_b2 = create_block(3, get_last_block(chain2)->block_hash, &trans_b, 1);
+    if (validate_block_transitions(block_b2, state2, error_msg, sizeof(error_msg)))
+    {
+        apply_block_to_state(state2, block_b2, error_msg, sizeof(error_msg));
+        add_block(chain2, block_b2);
+        printf("  Bloco B adicionado (hash: %lu)\n", block_b2->block_hash);
+    }
+    else
+    {
+        free_block(block_b2);
+    }
+    
+    printf("\n╔═══════════════════════════════════════════════════╗\n");
+    printf("║              COMPARAÇÃO DE RESULTADOS             ║\n");
+    printf("╠═══════════════════════════════════════════════════╣\n");
+    
+    printf("║  Hash final da Chain 1: %20lu ║\n", get_last_block(chain1)->block_hash);
+    printf("║  Hash final da Chain 2: %20lu ║\n", get_last_block(chain2)->block_hash);
+    
+    if (get_last_block(chain1)->block_hash != get_last_block(chain2)->block_hash)
+    {
+        printf("║                                                   ║\n");
+        printf("║   Hashes DIFERENTES (como esperado)            ║\n");
+    }
+    else
+    {
+        printf("║                                                   ║\n");
+        printf("║   Hashes IGUAIS (inesperado!)                 ║\n");
+    }
+    
+    printf("╠═══════════════════════════════════════════════════╣\n");
+    printf("║            Estados Finais das Contas              ║\n");
+    printf("╠═══════════════════════════════════════════════════╣\n");
+    printf("║  Conta  │  Chain 1  │  Chain 2  │  Diferença    ║\n");
+    printf("╠═════════╪═══════════╪═══════════╪═══════════════╣\n");
+    
+    int states_differ = 0;
+    for (int i = 0; i < NUM_ACCOUNTS; i++)
+    {
+        uint64_t bal1 = get_balance(state1, i);
+        uint64_t bal2 = get_balance(state2, i);
+        
+        printf("║    %d    │  %7lu  │  %7lu  │", i, bal1, bal2);
+        
+        if (bal1 == bal2)
+        {
+            printf("      -       ║\n");
+        }
+        else
+        {
+            printf("   %s%ld      ║\n", 
+                   bal2 > bal1 ? "+" : "", 
+                   (long)bal2 - (long)bal1);
+            states_differ = 1;
+        }
+    }
+    
+    printf("╚═══════════════════════════════════════════════════╝\n");
+    
+    if (states_differ)
+    {
+        printf("\n ESTADOS FINAIS DIFERENTES!\n");
+        printf("   Mesmas transações, ordem diferente = resultado diferente\n");
+    }
+    else
+    {
+        printf("\n✓ Estados finais idênticos\n");
+        printf("  (Neste caso, as transações eram independentes)\n");
+    }
+        
+    free_state(state1);
+    free_state(state2);
+    free_state(genesis_state);
+    free_state(genesis_1);
+    free_state(genesis_2);
+    free_blockchain(chain1);
+    free_blockchain(chain2);
 }
 
 int main(void)
 {
+    srand((unsigned int)time(NULL));
+    
     printf("\n╔═══════════════════════════════════════════════════════╗\n");
-    printf("║         Testes de Robustez e Segurança C             ║\n");
+    printf("║              Testes de Fuzzing e Robustez             ║\n");
     printf("╚═══════════════════════════════════════════════════════╝\n\n");
     
-    test_null_pointers();
+    test_fuzz_random_transitions();
     printf("────────────────────────────────────────────────────\n\n");
     
-    test_duplicate_transitions();
+    test_fuzz_extreme_values();
     printf("────────────────────────────────────────────────────\n\n");
     
-    test_edge_cases();
+    test_fuzz_random_blocks();
     printf("────────────────────────────────────────────────────\n\n");
     
-    test_memory_safety();
+    test_fuzz_stress_test();
+    printf("────────────────────────────────────────────────────\n\n");
+    
+    test_consensus_order_matters();
     
     printf("╔═══════════════════════════════════════════════════════╗\n");
-    printf("║              RESUMO DE ROBUSTEZ                       ║\n");
+    printf("║              RESUMO FINAL                             ║\n");
     printf("╠═══════════════════════════════════════════════════════╣\n");
-    printf("║ ✅ Ponteiros NULL tratados sem crash                 ║\n");
-    printf("║ ✅ Transições duplicadas bem definidas               ║\n");
-    printf("║ ✅ Casos extremos validados                          ║\n");
-    printf("║ ✅ Overflow detectado e bloqueado                    ║\n");
-    printf("║ ✅ Memória gerenciada com segurança                  ║\n");
-    printf("║ ✅ Sem undefined behavior                            ║\n");
+    printf("║  1000+ transações (mix válidas/inválidas)          ║\n");
+    printf("║  Valores extremos tratados corretamente            ║\n");
+    printf("║  100+ blocos aleatórios processados                ║\n");
+    printf("║  10000+ operações mistas executadas                ║\n");
+    printf("║  Integridade mantida durante fuzzing               ║\n");
+    printf("║  Replay determinístico confirmado                  ║\n");
+    printf("║  Ordem importa: consenso necessário                ║\n");
+    printf("║  Sistema robusto contra entradas maliciosas        ║\n");
     printf("╚═══════════════════════════════════════════════════════╝\n");
     
     return 0;

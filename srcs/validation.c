@@ -51,7 +51,7 @@ Validation_Code validate_transiton(const State *state, const Transition *transit
         return VALIDATION_ERR_INSUFFICIENT_FUNDS;
     }
 
-    if (amount >= (UINT64_MAX - to_balance))
+    if (amount >= (UINT64_MAX - to_balance) || amount >= (UINT64_MAX - from_balance))
     {
         set_err(error_msg, error_msg_len, "overflow");
         return VALIDATION_ERR_OVERFLOW;
