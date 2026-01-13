@@ -12,9 +12,11 @@ typedef struct Blockchain
     Block **blocks;
     long block_count;
     State *state;
+    State *genesis_state;
 } Blockchain;
 
 Blockchain *create_blockchain();
+Blockchain *create_blockchain_with_genesis_state(State *genesis_state);
 int validate_block_chain(Blockchain *chain, Block *block);
 int add_block(Blockchain *chain, Block *block);
 Block *get_last_block(Blockchain *chain);

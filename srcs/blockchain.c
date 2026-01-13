@@ -9,7 +9,8 @@ Blockchain *create_blockchain()
     chain->blocks = NULL;
     chain->block_count = 0;
     chain->state = NULL;
-    
+    chain->genesis_state = NULL;
+
     Block *genesis = create_block_genesis();
     if (!genesis)
     {
@@ -27,6 +28,26 @@ Blockchain *create_blockchain()
     
     chain->blocks[0] = genesis;
     chain->block_count = 1;
+    return chain;
+}
+
+Blockchain *create_blockchain_with_genesis_state(State *genesis_state)
+{
+    Blockchain *chain = create_blockchain();
+    if (!chain)
+        return NULL;
+    
+    chain->genesis_state = create_state(genesis_state->number_of_accounts);
+    if (!chain->genesis_state)
+    {
+        free_blockchain(chain);
+        return NULL;
+    }
+
+    for (long i = 0; i < genesis_state->number_of_accounts; i++)
+    {
+        chain->genesis_state->balances[i] = genesis_state->balances[i];
+    }
     return chain;
 }
 
@@ -157,6 +178,10 @@ void free_blockchain(Blockchain *chain)
             free_block(chain->blocks[i]);
         }
         free(chain->blocks);
+
+        if (chain->genesis_state)
+            free_state(chain->genesis_state);
+            
         free(chain);
     }
 }
